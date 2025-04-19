@@ -4,6 +4,8 @@
 package org.example;
 
 import org.junit.Test;
+import org.weather.App;
+
 import static org.junit.Assert.*;
 
 public class AppTest {

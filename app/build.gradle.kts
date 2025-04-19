@@ -30,6 +30,9 @@ dependencies {
     // Add Spring Boot starter dependencies
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-web")
+
+    // Add dotenv-java library to load environment variables from the .env file
+    implementation("io.github.cdimascio:dotenv-java:3.2.0")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -41,7 +44,7 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = "org.example.App"
+    mainClass = "org.weather.App"
 }
 
 tasks.named<BootJar>("bootJar") {
