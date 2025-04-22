@@ -33,6 +33,9 @@ dependencies {
 
     // Add dotenv-java library to load environment variables from the .env file
     implementation("io.github.cdimascio:dotenv-java:3.2.0")
+
+    implementation(platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.3.0"))
+    implementation("io.awspring.cloud:spring-cloud-aws-starter-s3")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
