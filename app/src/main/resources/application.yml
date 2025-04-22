@@ -7,9 +7,11 @@ spring:
       s3:
         endpoint: ${AWS_S3_ENDPOINT}
         region: ${AWS_S3_REGION}
+        base: "s3://"
+        bucket: "weather"
       credentials:
-        access-key: none
-        secret-key: none
+        access-key: ${AWS_ACCESS_KEY}
+        secret-key: ${AWS_SECRET_KEY}
       region:
         static: ${AWS_REGION}
 
