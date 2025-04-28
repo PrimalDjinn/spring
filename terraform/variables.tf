@@ -1,11 +1,15 @@
 variable "aws_region" {
   type    = string
-  default = ""
+  default = "us-west-2"
 }
 
 variable "db_username" {
   type    = string
-  default = "root"
+  default = "postgres"
+  validation {
+    condition     = length(var.db_username) > 0
+    error_message = "DB username cannot be empty"
+  }
 }
 
 variable "db_password" {
@@ -16,7 +20,7 @@ variable "db_password" {
 
 variable "db_name" {
   type    = string
-  default = "primal"
+  default = "default_db"
 }
 
 variable "monthly_budget_amount" {
@@ -46,4 +50,15 @@ variable "access_key" {
 variable "secret_key" {
   type      = string
   sensitive = true
+}
+
+variable "open_weather_app_id" {
+  type        = string
+  description = "OpenWeather API key"
+  default     = ""
+  sensitive   = true
+  validation {
+    condition     = length(var.open_weather_app_id) > 0
+    error_message = "OpenWeather API key cannot be empty"
+  }
 }

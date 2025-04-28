@@ -10,18 +10,18 @@ jobs:
         runs-on: ubuntu-latest
         env:
             AWS_REGION: ${{ secrets.AWS_REGION }}
-            ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-            ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
-            ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
+            AWS_ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
+            AWS_ECS_CLUSTER: ${{ secrets.AWS_ECS_CLUSTER }}
+            AWS_ECS_SERVICE: ${{ secrets.AWS_ECS_SERVICE }}
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Set up JDK 17
+            - name: Set up JDK 22
               uses: actions/setup-java@v4
               with:
                   distribution: "temurin"
-                  java-version: "17"
+                  java-version: "22"
 
             - name: Grant execute permission for gradlew
               run: chmod +x ./gradlew
@@ -48,25 +48,31 @@ jobs:
                   AWS_ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
               run: |
                   IMAGE_TAG=latest
-                  docker build -t $AWS_ECR_REGISTRY/$AWS_ECR_REPOSITORY:$IMAGE_TAG -f app/Dockerfile ./app
+                  docker build -t $AWS_ECR_REGISTRY/$AWS_ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile .
                   docker push $AWS_ECR_REGISTRY/$AWS_ECR_REPOSITORY:$IMAGE_TAG
 
             - name: Download ECS task definition
               run: |
                   aws ecs describe-task-definition --task-definition spring-app \
                     --query 'taskDefinition' > task-definition.json
+                  cat task-definition.json
 
             - name: Update image in ECS task definition
               run: |
-                  IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+                  IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${{ env.AWS_ECR_REPOSITORY }}:latest
                   jq '.containerDefinitions[0].image = "'"$IMAGE_URI"'"' task-definition.json > new-task-def.json
+                  cat new-task-def.json
+
+            - name: Clean ECS task definition JSON
+              run: |
+                  jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' new-task-def.json > clean-task-def.json
 
             - name: Register new ECS task definition
               id: register-task-def
               run: |
-                  AWS_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json --query 'taskDefinition.taskDefinitionArn' --output text)
-                  echo "AWS_TASK_DEF_ARN=$AWS_TASK_DEF_ARN" >> $GITHUB_OUTPUT
+                  AWS_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://clean-task-def.json --query 'taskDefinition.taskDefinitionArn' --output text)
+                  echo "task_def_arn=$AWS_TASK_DEF_ARN" >> $GITHUB_OUTPUT
 
             - name: Update ECS service to use new task definition
               run: |
-                  aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition ${{ steps.register-task-def.outputs.task_def_arn }}
+                  aws ecs update-service --cluster $AWS_ECS_CLUSTER --service $AWS_ECS_SERVICE --task-definition ${{ steps.register-task-def.outputs.task_def_arn }}
